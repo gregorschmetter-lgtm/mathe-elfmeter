@@ -919,6 +919,21 @@
         return { a, b, operator: "−", answer: a - b };
       }
 
+      function multiplication(league) {
+        const tablesByLeague = {
+          1: [1, 2, 5, 10],
+          2: [1, 2, 5, 10],
+          3: [1, 2, 3, 4, 5, 10],
+          4: [1, 2, 3, 4, 5, 6, 10],
+          5: [1, 2, 3, 4, 5, 6, 7, 8, 10],
+          6: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        };
+        const tables = tablesByLeague[league] || tablesByLeague[6];
+        const a = tables[randomInt(0, tables.length - 1)];
+        const b = randomInt(1, 10);
+        return { a, b, operator: "×", answer: a * b };
+      }
+
       function noCarryAddition(maximum = 20) {
         if (maximum <= 10 || Math.random() < .34) return addition(10);
         const a = randomInt(10, 18);
@@ -957,6 +972,8 @@
       }
 
       function problemForLeague(league) {
+        const multiplicationChance = [.18, .22, .28, .34, .4, .46][league - 1] || .46;
+        if (Math.random() < multiplicationChance) return multiplication(league);
         if (league === 1) return noCarryAddition(20);
         if (league === 2) return Math.random() < .62 ? noCarryAddition(20) : noBorrowSubtraction(20);
         if (league === 3) return mixedTwenty(.2);
@@ -982,15 +999,35 @@
         return problem;
       }
 
-      function answerOptions(answer) {
+      function answerOptions(problem) {
+        const { answer, a, b, operator } = problem;
         const options = new Set([answer]);
-        const offsets = shuffle([-1, 1, -2, 2, -3, 3, -4, 4]);
-        for (const offset of offsets) {
-          if (options.size === 4) break;
-          const candidate = answer + offset;
-          if (candidate >= 0 && candidate <= 20) options.add(candidate);
+        if (operator === "×") {
+          const plausibleProducts = shuffle([
+            (a - 1) * b, (a + 1) * b,
+            a * (b - 1), a * (b + 1),
+            answer - a, answer + a,
+            answer - b, answer + b,
+            answer - 1, answer + 1
+          ]);
+          plausibleProducts.forEach(candidate => {
+            if (options.size < 4 && candidate >= 0 && candidate <= 100) options.add(candidate);
+          });
+          let attempts = 0;
+          while (options.size < 4 && attempts < 40) {
+            options.add(randomInt(1, 10) * randomInt(1, 10));
+            attempts += 1;
+          }
+          while (options.size < 4) options.add(randomInt(0, 100));
+        } else {
+          const offsets = shuffle([-1, 1, -2, 2, -3, 3, -4, 4]);
+          for (const offset of offsets) {
+            if (options.size === 4) break;
+            const candidate = answer + offset;
+            if (candidate >= 0 && candidate <= 20) options.add(candidate);
+          }
+          while (options.size < 4) options.add(randomInt(0, 20));
         }
-        while (options.size < 4) options.add(randomInt(0, 20));
         return shuffle([...options]);
       }
 
@@ -1001,7 +1038,7 @@
         feedbackNode.className = "feedback";
         feedbackNode.textContent = "Wähle eine Zahl aus.";
         answersNode.replaceChildren();
-        answerOptions(currentProblem.answer).forEach(value => {
+        answerOptions(currentProblem).forEach(value => {
           const button = document.createElement("button");
           button.type = "button";
           button.className = "answer";
