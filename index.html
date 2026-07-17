@@ -201,8 +201,11 @@
       font-size: clamp(2rem, 5vw, 2.8rem);
       font-weight: 1000;
       transition: transform .12s, border-color .12s, background .12s;
+      -webkit-tap-highlight-color: transparent;
     }
-    .answer:hover { border-color: #d9b920; background: #fff7c5; transform: translateY(-4px); }
+    @media (hover: hover) and (pointer: fine) {
+      .answer:hover { border-color: #d9b920; background: #fff7c5; transform: translateY(-4px); }
+    }
     .answer:active { border-bottom-width: 3px; transform: translateY(3px); }
     .answer.correct { border-color: #08714f; color: white; background: var(--green); animation: answer-pop .4s; }
     .answer.wrong { border-color: #b93945; color: white; background: var(--red); animation: answer-shake .36s; }
@@ -1064,6 +1067,7 @@
       function checkAnswer(value, button) {
         if (answerLocked) return;
         answerLocked = true;
+        button.blur();
         [...answersNode.children].forEach(item => { item.disabled = true; });
         const correct = value === currentProblem.answer;
         const reward = recordBlockResult(correct);
